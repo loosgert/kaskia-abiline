@@ -9,7 +9,10 @@
   var script = document.currentScript;
   var origin = script ? new URL(script.src).origin : "";
   var TEASER_KEY = "kaskia-abiline:teaser-closed";
+  var TEASER_SESSION_KEY = "kaskia-abiline:teaser-shown";
   var TEASER_TEXT = "Kas saan aidata?";
+  var TEASER_SECONDS = 12;
+  var LOADING_TEXT = "Avan vestlust…";
   var NS = "http://www.w3.org/2000/svg";
   var reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -24,6 +27,12 @@
   function storageSet(key, value) {
     try { window.localStorage.setItem(key, value); } catch (e) {}
   }
+  function sessionGet(key) {
+    try { return window.sessionStorage.getItem(key); } catch (e) { return null; }
+  }
+  function sessionSet(key, value) {
+    try { window.sessionStorage.setItem(key, value); } catch (e) {}
+  }
 
   var host = document.createElement("div");
   host.setAttribute("data-kaskia-abiline", "");
@@ -36,6 +45,8 @@
     ".wrap.hidden{display:none}",
     ".bubble{margin:0 18px 112px 0;background:#fff;border:1px solid #DDD5CA;border-radius:16px 16px 4px 16px;padding:9px 8px 9px 14px;font-family:inherit;font-size:15px;line-height:1.3;white-space:nowrap;display:flex;align-items:center;gap:6px;box-shadow:0 6px 18px rgba(35,33,31,.10);opacity:0;transform-origin:100% 100%;animation:pop .5s cubic-bezier(.2,.9,.3,1.35) 1.4s forwards;cursor:pointer}",
     ".bubble[hidden]{display:none}",
+    ".bubble.out{animation:fade .4s ease forwards}",
+    "@keyframes fade{from{opacity:1}to{opacity:0;transform:translateY(6px)}}",
     ".bubble .x{border:0;background:none;color:#6B655B;font-family:inherit;font-size:18px;line-height:1;width:28px;height:28px;border-radius:50%;cursor:pointer}",
     ".bubble .x:hover{background:#ECE6DE}",
     ".whisk{border:0;padding:0;background:none;cursor:pointer;-webkit-tap-highlight-color:transparent;border-radius:16px}",
@@ -52,7 +63,10 @@
     "@keyframes pop{from{opacity:0;transform:scale(.6) translateY(10px)}to{opacity:1;transform:none}}",
     ".panel{position:fixed;right:16px;bottom:16px;z-index:2147483001;width:380px;height:600px;max-height:calc(100vh - 32px);border:1px solid #DDD5CA;border-radius:16px;overflow:hidden;background:#F6F2ED;box-shadow:0 12px 40px rgba(35,33,31,.25);display:none}",
     ".panel.open{display:block}",
-    ".panel iframe{width:100%;height:100%;border:0;display:block}",
+    ".panel iframe{width:100%;height:100%;border:0;display:block;opacity:0;transition:opacity .2s}",
+    ".panel.ready iframe{opacity:1}",
+    ".loader{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:inherit;font-size:15px;color:#6B655B}",
+    ".panel.ready .loader{display:none}",
     ".close{position:absolute;top:8px;right:8px;width:40px;height:40px;border:0;border-radius:50%;background:transparent;color:#23211F;cursor:pointer;display:flex;align-items:center;justify-content:center}",
     ".close:hover{background:#ECE6DE}",
     "@media (max-width:520px){.whisk svg{width:88px;height:121px}.bubble{margin-bottom:78px;font-size:14px}.panel{inset:0;width:auto;height:auto;max-height:none;border:0;border-radius:0}}",
@@ -74,7 +88,17 @@
   bubbleClose.setAttribute("aria-label", "Sulge");
   bubbleClose.textContent = "×";
   bubble.appendChild(bubbleClose);
-  if (storageGet(TEASER_KEY) === "1") bubble.hidden = true;
+  // The teaser shows once per visit and fades out after TEASER_SECONDS; closing it with × hides it for good.
+  if (storageGet(TEASER_KEY) === "1" || sessionGet(TEASER_SESSION_KEY) === "1") {
+    bubble.hidden = true;
+  } else {
+    sessionSet(TEASER_SESSION_KEY, "1");
+    setTimeout(function () {
+      if (bubble.hidden) return;
+      bubble.classList.add("out");
+      setTimeout(function () { bubble.hidden = true; }, reduceMotion ? 0 : 450);
+    }, 1400 + TEASER_SECONDS * 1000);
+  }
 
   var whisk = document.createElement("button");
   whisk.type = "button";
@@ -105,14 +129,24 @@
     storageSet(TEASER_KEY, "1");
   }
 
+  var loader = document.createElement("div");
+  loader.className = "loader";
+  loader.textContent = LOADING_TEXT;
+
+  // Starts loading the chat as soon as the visitor points at or touches the whisk, so it is ready on click.
+  function ensureFrame() {
+    if (panel.querySelector("iframe")) return;
+    var frame = document.createElement("iframe");
+    frame.title = "Kaskia abiline";
+    frame.addEventListener("load", function () { panel.classList.add("ready"); });
+    frame.src = origin + "/widget";
+    panel.appendChild(loader);
+    panel.appendChild(frame);
+    panel.appendChild(closeButton);
+  }
+
   function openChat() {
-    if (!panel.querySelector("iframe")) {
-      var frame = document.createElement("iframe");
-      frame.src = origin + "/widget";
-      frame.title = "Kaskia abiline";
-      panel.appendChild(frame);
-      panel.appendChild(closeButton);
-    }
+    ensureFrame();
     closeTeaser();
     panel.classList.add("open");
     wrap.classList.add("hidden");
@@ -128,6 +162,9 @@
   }
 
   whisk.addEventListener("click", openChat);
+  whisk.addEventListener("pointerenter", ensureFrame);
+  whisk.addEventListener("focus", ensureFrame);
+  whisk.addEventListener("touchstart", ensureFrame, { passive: true });
   bubble.addEventListener("click", openChat);
   bubble.addEventListener("keydown", function (e) {
     if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openChat(); }
