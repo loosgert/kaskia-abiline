@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 import { PrismaClient } from "@prisma/client";
 import { parseFactsCsv } from "../src/lib/csv";
 import { DEFAULT_PROMPT, DEFAULT_PROMPT_NAME, PREVIOUS_DEFAULT_PROMPT_HASHES } from "../src/lib/default-prompt";
+import { deleteExpiredData } from "../src/lib/retention";
 import { DEFAULT_SETTINGS } from "../src/lib/settings";
 
 const db = new PrismaClient();
@@ -30,6 +31,9 @@ async function main() {
   }
 
   await db.assistantSettings.upsert({ where: { id: 1 }, update: {}, create: { id: 1, ...DEFAULT_SETTINGS } });
+
+  const removed = await deleteExpiredData(db);
+  if (removed.chats || removed.inquiries) console.log(`Deleted ${removed.chats} old chats and ${removed.inquiries} old inquiries`);
 }
 
 main()

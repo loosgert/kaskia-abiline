@@ -3,6 +3,7 @@ import { AssistantUnavailableError, askAssistant, loadSettings } from "@/lib/ass
 import { clientIp, handle, jsonError } from "@/lib/api";
 import { hashIp, isAdmin } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { deleteExpiredData } from "@/lib/retention";
 import { MAX_MESSAGE_LENGTH } from "@/lib/settings";
 import { errorTexts } from "@/lib/texts";
 
@@ -64,7 +65,10 @@ export const POST = handle(async (request: Request) => {
     ]);
     if (perChat >= PER_CHAT.limit || perVisitor >= PER_VISITOR.limit) return jsonError(errorTexts.rateLimited, 429);
     await db.rateLimitEvent.create({ data: { sessionId: session.id, ipHash } });
-    if (Math.random() < 0.05) await db.rateLimitEvent.deleteMany({ where: { createdAt: { lt: minutesAgo(24 * 60) } } });
+    if (Math.random() < 0.05) {
+      await db.rateLimitEvent.deleteMany({ where: { createdAt: { lt: minutesAgo(24 * 60) } } });
+      await deleteExpiredData(db);
+    }
   }
 
   const userMessage = await db.message.create({ data: { sessionId: session.id, role: "user", content: message } });
