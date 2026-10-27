@@ -141,7 +141,7 @@ export function AdminApp() {
   );
 
   return (
-    <div className="flex h-dvh">
+    <div className="flex min-h-0 flex-1">
       <aside className="hidden w-[280px] shrink-0 border-r border-border bg-card md:block">{sidebar}</aside>
       {sidebarOpen && (
         <div className="fixed inset-0 z-40 md:hidden">

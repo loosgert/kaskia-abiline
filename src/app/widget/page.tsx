@@ -6,7 +6,7 @@ export const metadata: Metadata = { title: "Kaskia abiline" };
 // Compact chat for the iframe that public/embed.js opens on kaskia.ee.
 export default function Widget() {
   return (
-    <main className="flex h-dvh w-full flex-col">
+    <main className="flex min-h-0 w-full flex-1 flex-col">
       <Chat
         source="widget"
         storageKey="kaskia-abiline:widget"
