@@ -2,7 +2,7 @@ import { Chat } from "@/components/chat";
 
 export default function Home() {
   return (
-    <main className="mx-auto flex h-dvh w-full max-w-[720px] flex-col">
+    <main className="mx-auto flex min-h-0 w-full max-w-[720px] flex-1 flex-col">
       <Chat
         source="site"
         storageKey="kaskia-abiline:site"

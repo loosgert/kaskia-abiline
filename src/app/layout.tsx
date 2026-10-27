@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { SiteFooter } from "@/components/site-footer";
 import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
@@ -18,8 +19,9 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="et" className="h-full antialiased">
-      <body className="flex min-h-full flex-col">
+      <body className="flex h-dvh flex-col">
         {children}
+        <SiteFooter />
         <Toaster position="top-center" />
       </body>
     </html>
