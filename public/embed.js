@@ -1,7 +1,7 @@
 // Kaskia abiline: an animated birch whisk in the bottom-right corner that opens the chat.
 // Add to every page of kaskia.ee:
 // <script src="https://<this-app>.onrender.com/embed.js" defer></script>
-// The whisk hides itself on /haldus. Everything lives in a shadow root, so the page's CSS and ours never mix.
+// The whisk hides itself on /haldus and /loobu. Everything lives in a shadow root, so the page's CSS and ours never mix.
 (function () {
   if (window.__kaskiaAbiline) return;
   window.__kaskiaAbiline = true;
@@ -32,7 +32,7 @@
   var style = document.createElement("style");
   style.textContent = [
     ":host{all:initial;font-family:inherit;color:#23211F}",
-    ".wrap{position:fixed;right:14px;bottom:8px;z-index:2147483000;display:flex;align-items:flex-end}",
+    ".wrap{position:fixed;right:14px;bottom:8px;z-index:2147483000;display:flex;align-items:flex-end;transition:bottom .2s ease-out}",
     ".wrap.hidden{display:none}",
     ".bubble{margin:0 18px 112px 0;background:#fff;border:1px solid #DDD5CA;border-radius:16px 16px 4px 16px;padding:9px 8px 9px 14px;font-family:inherit;font-size:15px;line-height:1.3;white-space:nowrap;display:flex;align-items:center;gap:6px;box-shadow:0 6px 18px rgba(35,33,31,.10);opacity:0;transform-origin:100% 100%;animation:pop .5s cubic-bezier(.2,.9,.3,1.35) 1.4s forwards;cursor:pointer}",
     ".bubble[hidden]{display:none}",
@@ -138,15 +138,31 @@
     if (e.key === "Escape" && panel.classList.contains("open")) closeChat();
   });
 
-  // Not shown in the owners' admin pages. The site is a single-page app, so the path is checked on navigation too.
-  function applyPath() {
-    host.style.display = /^\/haldus(\/|$)/.test(window.location.pathname) ? "none" : "";
+  // The page can mark its own overlays: [data-abiline-avoid] (a bar fixed to the bottom, the whisk moves above it)
+  // and [data-abiline-hide] (a full-screen menu, the whisk hides while it is open). Hidden on /haldus and /loobu.
+  // The site is a single-page app, so this is re-checked a few times a second.
+  function shown(el) {
+    var r = el.getBoundingClientRect();
+    if (r.width === 0 || r.height === 0) return false;
+    var cs = window.getComputedStyle(el);
+    return cs.visibility !== "hidden" && cs.display !== "none" && parseFloat(cs.opacity) > 0.05;
   }
-  applyPath();
-  var lastPath = window.location.pathname;
-  setInterval(function () {
-    if (window.location.pathname !== lastPath) { lastPath = window.location.pathname; applyPath(); }
-  }, 800);
+  function layout() {
+    var hide = /^\/(haldus|loobu)(\/|$)/.test(window.location.pathname);
+    var lift = 0;
+    var hiders = document.querySelectorAll("[data-abiline-hide]");
+    for (var i = 0; i < hiders.length; i++) if (shown(hiders[i])) hide = true;
+    var avoid = document.querySelectorAll("[data-abiline-avoid]");
+    for (var j = 0; j < avoid.length; j++) {
+      var r = avoid[j].getBoundingClientRect();
+      if (shown(avoid[j]) && r.bottom >= window.innerHeight - 4) lift = Math.max(lift, Math.round(window.innerHeight - r.top));
+    }
+    host.style.display = hide ? "none" : "";
+    wrap.style.bottom = 8 + lift + "px";
+  }
+  layout();
+  setInterval(layout, 400);
+  window.addEventListener("resize", layout);
 
   function mount() { document.body.appendChild(host); }
   if (document.body) mount();
