@@ -214,7 +214,7 @@ export function Chat({ source, storageKey, compact = false, header, onSent }: Pr
             </Bubble>
             {m.role === "assistant" && m.waitlistSize && (
               <a
-                href={`https://kaskia.ee/ootenimekiri?suurus=${encodeURIComponent(m.waitlistSize)}`}
+                href={`https://kaskia.ee/ootenimekiri?suurus=${m.waitlistSize === "0,33" ? "0,33" : "0,5"}`}
                 target={waitlistTarget}
                 rel="noopener"
                 className="ml-1 inline-flex min-h-11 items-center rounded-full bg-ember px-5 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90"

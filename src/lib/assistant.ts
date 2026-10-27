@@ -188,7 +188,8 @@ export async function askAssistant(
       .map((b) => b.text)
       .join("")
       .trim();
-    if (roundText) text = text ? `${text}\n\n${roundText}` : roundText;
+    // The latest round's text is the answer; earlier text was only a lead-in to a tool call.
+    if (roundText) text = roundText;
 
     const toolUses = response.content.filter((b): b is Anthropic.Beta.BetaToolUseBlock => b.type === "tool_use");
     if (response.stop_reason !== "tool_use" || toolUses.length === 0) break;
@@ -197,6 +198,12 @@ export async function askAssistant(
     const results: BetaToolResultBlockParam[] = [];
     for (const block of toolUses) results.push(await runTool(block, ctx));
     messages.push({ role: "user", content: results });
+
+    // suggest_waitlist and log_unanswered need no reply once the answer is written. Ask again only when
+    // there is no answer yet, a tool failed, or an inquiry was saved (the model then confirms it).
+    const needsReply =
+      !roundText || results.some((r) => r.is_error) || toolUses.some((b) => b.name === "save_company_inquiry");
+    if (!needsReply) break;
   }
 
   return { text: text || errorTexts.refusal, waitlistSize: ctx.waitlistSize, inquirySaved: ctx.inquirySaved };
