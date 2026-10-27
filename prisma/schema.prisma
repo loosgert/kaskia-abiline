@@ -1,0 +1,107 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// One conversation. source: "site" (/), "widget" (/widget) or "owner" (test chat in /haldus).
+model ChatSession {
+  id              String               @id @default(uuid())
+  source          String
+  title           String               @default("")
+  model           String
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+  messages        Message[]
+  sizeSuggestions SizeSuggestion[]
+  unanswered      UnansweredQuestion[]
+  inquiries       CompanyInquiry[]
+
+  @@index([updatedAt])
+}
+
+model Message {
+  id           String      @id @default(cuid())
+  sessionId    String
+  session      ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  role         String // "user" | "assistant"
+  content      String
+  // Size the assistant recommended in this answer ("0,33" | "0,5"); the UI shows the waitlist button.
+  waitlistSize String?
+  createdAt    DateTime    @default(now())
+
+  @@index([sessionId, createdAt])
+}
+
+model Fact {
+  id        String   @id @default(cuid())
+  position  Int      @default(0)
+  topic     String
+  question  String
+  answer    String
+  source    String   @default("")
+  updatedAt DateTime @updatedAt
+}
+
+model SystemPrompt {
+  id        String   @id @default(cuid())
+  name      String
+  content   String
+  isActive  Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+// Single row (id 1) with the settings used for every chat.
+model AssistantSettings {
+  id           Int      @id @default(1)
+  model        String
+  effort       String
+  answerLength String
+  updatedAt    DateTime @updatedAt
+}
+
+model SizeSuggestion {
+  id        String      @id @default(cuid())
+  sessionId String
+  session   ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  size      String
+  createdAt DateTime    @default(now())
+}
+
+model UnansweredQuestion {
+  id        String      @id @default(cuid())
+  sessionId String
+  session   ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  question  String
+  createdAt DateTime    @default(now())
+}
+
+// Kept when its chat is deleted, because it is a sales lead.
+model CompanyInquiry {
+  id            String       @id @default(cuid())
+  sessionId     String?
+  session       ChatSession? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+  company       String
+  contactName   String
+  email         String
+  quantity      String
+  size          String
+  deadline      String
+  purpose       String
+  logoRequested Boolean      @default(false)
+  createdAt     DateTime     @default(now())
+}
+
+// One row per customer message, for rate limiting. ipHash is a salted SHA-256, never the raw IP.
+model RateLimitEvent {
+  id        String   @id @default(cuid())
+  sessionId String
+  ipHash    String
+  createdAt DateTime @default(now())
+
+  @@index([sessionId, createdAt])
+  @@index([ipHash, createdAt])
+}

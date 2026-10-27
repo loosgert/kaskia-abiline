@@ -1,0 +1,78 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import "@fontsource-variable/bricolage-grotesque";
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: "Bricolage Grotesque Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-heading: var(--font-sans);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-ember: var(--ember);
+  --color-stone: var(--stone);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+/* Kaskia brand: ground #F6F2ED, ink #23211F, ember #A6543A, stone #8C8579.
+   Small secondary text uses a darker stone (#6B655B) so it passes WCAG AA on the ground colour. */
+:root {
+  --background: #f6f2ed;
+  --foreground: #23211f;
+  --card: #ffffff;
+  --card-foreground: #23211f;
+  --popover: #ffffff;
+  --popover-foreground: #23211f;
+  --primary: #a6543a;
+  --primary-foreground: #ffffff;
+  --secondary: #ece6de;
+  --secondary-foreground: #23211f;
+  --muted: #ece6de;
+  --muted-foreground: #6b655b;
+  --accent: #ece6de;
+  --accent-foreground: #23211f;
+  --destructive: #b3261e;
+  --border: #ddd5ca;
+  --input: #cfc6ba;
+  --ring: #a6543a;
+  --ember: #a6543a;
+  --stone: #8c8579;
+  --radius: 0.75rem;
+  color-scheme: light;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+  }
+  ::selection {
+    background: color-mix(in srgb, var(--ember) 25%, transparent);
+  }
+}
